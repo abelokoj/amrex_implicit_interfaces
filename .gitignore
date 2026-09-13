@@ -29,3 +29,7 @@ plotting/data/
 
 # ---- Bundles: keep these, they are small and they ARE the results ----
 !**/runs/bundles/
+
+# fig_zip.zip is regenerable (the source PNGs under figures/ are
+# authoritative), but all_figures*.pdf is kept for quick browsing.
+fig_zip.zip
