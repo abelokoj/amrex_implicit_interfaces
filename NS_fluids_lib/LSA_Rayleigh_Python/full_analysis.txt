@@ -1,0 +1,179 @@
+# =====================================================================
+# full_analysis.txt
+#
+# Every calculation of the study, one per line, read by scripts/run_all.sh.
+# Blank lines and lines whose first non-blank character is '#' are ignored, so
+# whole blocks may be commented out to run a subset without editing the field
+# values.
+#
+# Column order:
+#
+#   label  kr0  eps  cells_per_r0  rmax  n_periods  snapshots
+#
+#   label          directory name under runs; must be unique
+#   kr0            wavenumber k*r0; unstable for kr0 < 1, peak at 0.697
+#   eps            perturbation amplitude, ns.radblob, in units of r0
+#   cells_per_r0   radial resolution
+#   rmax           domain radius in units of r0
+#   n_periods      run length in e-folding times of the viscous estimate;
+#                  5.0 reaches the asymptotic plateau; 2.6 does not,
+#                  and leaves about 3 per cent of transient in the fit
+#   snapshots      target number of plotfiles
+#
+# A label ending in '.base' is treated as an unperturbed twin and its eps
+# field is ignored; the twin is required only for the velocity subspace and
+# the |Q'| form of the proportionality test, not for the interface-amplitude
+# measurement, which reads the perturbed calculation alone.
+#
+# Cost scales roughly as cells_per_r0 cubed, since the capillary time-step
+# limit varies as dx^1.5. On a single core the 8-cell cases take a few hours
+# each and the 32-cell case takes days; on 16 ranks, minutes to hours. Order
+# the file so that the cases you most need finish first, because the runner
+# proceeds from top to bottom and may be interrupted and resumed at any point.
+#
+# Resume behaviour: a case whose amplitude record already exists is skipped,
+# and a case that is partly advanced continues from its most recent
+# checkpoint. Re-running the script after an interruption is therefore safe.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# Stage 1. Reference case and grid convergence.
+#
+# The measured growth rate must be shown independent of the mesh before it is
+# quoted. The 8-cell case reproduces the published measurement; the 16- and
+# 32-cell cases test whether the plateau value moves. Expect the fitted rate
+# to approach the viscous estimate 0.3289 from below as the mesh is refined.
+# ---------------------------------------------------------------------
+res08          0.7   2e-2    8   4.0   5.0   120
+res16          0.7   2e-2   16   4.0   5.0   120
+res32          0.7   2e-2   32   4.0   5.0   120
+
+# ---------------------------------------------------------------------
+# Stage 2. Proportionality of the response.
+#
+# Under linearity the scaled amplitude a(t)/eps collapses onto one curve and
+# the growth rate is independent of eps. The collapse holds at all times, so
+# these cases need not reach the plateau; n_periods is reduced accordingly.
+# The case eps = 2e-2 is supplied by res08 above and is not repeated.
+#
+# Failure is diagnosed by where the collapse degrades: late-time departure
+# indicates the neglected O(eps^2) term and calls for a smaller amplitude,
+# whereas early-time departure indicates round-off and calls for a larger one.
+# ---------------------------------------------------------------------
+eps005         0.7   5e-3    8   4.0   1.2    60
+eps010         0.7   1e-2    8   4.0   1.2    60
+eps040         0.7   4e-2    8   4.0   1.2    60
+
+# ---------------------------------------------------------------------
+# Stage 3. Dispersion relation.
+#
+# Each wavenumber is a separate discrete problem, since the box length is one
+# wavelength and therefore changes with k. Run length is set in e-folding
+# times rather than absolute time, so the slowly growing cases at the ends of
+# the band are advanced correspondingly further.
+#
+# Expect a maximum near kr0 = 0.697 and every point below the inviscid curve.
+# A point above that curve is physically impossible and indicates an error,
+# most often ns.yblob disagreeing with the axial domain height.
+# ---------------------------------------------------------------------
+disp020        0.2   2e-2    8   4.0   5.0   120
+disp030        0.3   2e-2    8   4.0   5.0   120
+disp040        0.4   2e-2    8   4.0   5.0   120
+disp050        0.5   2e-2    8   4.0   5.0   120
+disp060        0.6   2e-2    8   4.0   5.0   120
+disp080        0.8   2e-2    8   4.0   5.0   120
+disp090        0.9   2e-2    8   4.0   5.0   120
+
+# The stable band. A negative control: kr0 > 1 lies beyond the cut-off, so the
+# amplitude must decay. Recovering a negative growth rate here is evidence
+# that the procedure is not manufacturing growth out of discretisation error.
+disp110        1.1   2e-2    8   4.0   5.0   120
+
+# ---------------------------------------------------------------------
+# Stage 4. Domain independence.
+#
+# The outer boundary is a no-slip wall, which confines the gas. If the growth
+# rate obtained at rmax = 6 differs materially from res08, the domain is too
+# small and the whole study must be repeated at the larger radius.
+# ---------------------------------------------------------------------
+domain06       0.7   2e-2    8   6.0   5.0   120
+
+# ---------------------------------------------------------------------
+# Stage 5. Twin calculations.
+#
+# Required only for the velocity-based subspace and for the |Q'| form of the
+# proportionality test. The interface-amplitude measurement does not need
+# them, so they are placed last; comment them out to halve the total cost if
+# only growth rates are wanted.
+#
+# The twin is independent of eps, so one twin serves every amplitude at a
+# given wavenumber and resolution.
+# ---------------------------------------------------------------------
+res08.base     0.7   0.0     8   4.0   5.0   120
+# res16.base   0.7   0.0    16   4.0   5.0   120
+
+# ---------------------------------------------------------------------
+# Cases held in reserve. Uncomment as required.
+#
+# A second Ohnesorge number would test whether the measured departure from
+# theory scales with viscosity, which would distinguish a viscous-correction
+# error from a discretisation error. Changing Oh requires editing mu_l in the
+# deck template, so it is not expressible in the columns above and is noted
+# here only as a reminder.
+# ---------------------------------------------------------------------
+# res08_long   0.7   2e-2    8   4.0   4.0   200
+
+# ---------------------------------------------------------------------
+# Break-up. These carry the reference wavenumber past the linear regime to
+# pinch-off, so that the break-up time predicted by extrapolating the linear
+# rate can be compared against the observed one.
+#
+# n_periods is 6.0 rather than 5.0. The neck closes when the mode amplitude
+# reaches r0, which from eps = 2e-2 is a growth by a factor of fifty, or 3.9
+# e-folding times; adding the startup transient puts break-up near t = 14 at
+# the measured rate, and 6.0 e-folding times gives a stop time near 18, a
+# margin of roughly a quarter for the nonlinear slowdown.
+#
+# The resolution is the reason there are two lines rather than one. Break-up
+# is a singularity and no mesh resolves it to the end, so the break-up time
+# is mesh-dependent and the dependence must be reported rather than assumed.
+# At 8 cells per radius a cell is an eighth of r0 and the neck is never
+# represented at all, which is why 8 does not appear here. Run both and quote
+# the difference.
+#
+# These are expensive: pinch32 is roughly sixty times the reference case in
+# cell count and more than twice its duration, so it belongs on the cluster.
+# Run pinch16 first and confirm it breaks before committing to pinch32.
+#
+# label        kr0   eps    cells  rmax  n_periods  snapshots
+  pinch16      0.7   2e-2    16    4.0     6.0        240
+  pinch32      0.7   2e-2    32    4.0     6.0        240
+
+# ---------------------------------------------------------------------
+# Measurement cases. These replace res08/res16/res32 as the source of the
+# quoted growth rate, and they differ in one respect that matters: the
+# perturbation amplitude is 5e-3 rather than 2e-2.
+#
+# The window in which a rate may be fitted is bounded on both sides. It opens
+# when the modal transient has decayed and closes when the amplitude leaves
+# the linear range, taken at 0.1 r0. Those bounds move in opposite directions
+# as the amplitude rises: at 2e-2 the transient falls below 5 per cent only at
+# t = 6.7, while the amplitude reaches 0.1 r0 at t = 6.8, so the window is
+# empty and no rate from those runs is clean. At 5e-3 the amplitude does not
+# reach 0.1 r0 until t = 10.6, by which time the transient is down to about
+# 1 per cent, so a usable window exists.
+#
+# n_periods = 3.5 places the stop time at t = 10.6, which is where that window
+# closes. A longer run adds only nonlinear data that every fit must discard,
+# so these are cheaper than the 5.0 cases they replace.
+#
+# The amplitude is still comfortably above the noise floor: 5e-3 is 4.7 per
+# cent of a cell width at 8 cells per radius and 19 per cent at 32, against a
+# level-set interface located by sub-cell interpolation. Compare against
+# meas08.base, which carries no imposed mode and measures that floor directly.
+#
+# label        kr0   eps    cells  rmax  n_periods  snapshots
+  meas08       0.7   5e-3     8    4.0     3.5        160
+  meas16       0.7   5e-3    16    4.0     3.5        160
+  meas32       0.7   5e-3    32    4.0     3.5        160
+  meas08.base  0.7   0.0      8    4.0     3.5        160

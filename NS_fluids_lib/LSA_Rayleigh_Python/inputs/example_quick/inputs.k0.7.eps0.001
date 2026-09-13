@@ -1,0 +1,169 @@
+# =====================================================================
+# Rayleigh-Plateau capillary instability -- NS-MFP linear stability run
+# =====================================================================
+# Generated from inputs_rayleigh_template.txt by the deck generator.
+# Do not edit generated decks by hand; edit the template and regenerate,
+# so the perturbed and unperturbed twins cannot drift apart.
+#
+#   probtype = 41, axis_dir = 4   (rayleigh capillary break up test problem,
+#                                  see PROB.F90 and inputs.growthrate.LSA)
+#   Axisymmetric (r,z), r0 = 1, level set:
+#       phi = -|r| + 1 + radblob * sin(2 pi z / yblob)
+#   so   yblob  = perturbation wavelength lambda = 2 pi / k
+#        radblob = perturbation amplitude eps    (0 for the base-state twin)
+#
+# THIS RUN:
+#   role        = perturbed
+#   k r0        = 0.7
+#   wavelength  = 8.97597901
+#   amplitude   = 0.001
+#   exact inviscid growth rate sigma_g = 0.3433268011
+#
+# The perturbed and unperturbed runs MUST be identical apart from radblob,
+# and must be launched on the same number of MPI ranks, or the twin
+# subtraction that replaces the NS-MFP body force B_f is invalid.
+# ---------------------------------------------------------------------
+
+max_step  = 7826
+stop_time = 12.15443471
+
+# ---------------- geometry -------------------------------------------
+# coord_sys=1 -> RZ (axisymmetric).  r in [0, 4], z in [0, lambda].
+# Periodic in z so that exactly one wavelength of mode k fits the box:
+# this makes k a clean, exactly-representable wavenumber rather than
+# something the domain truncates.
+geometry.coord_sys   = 1
+geometry.prob_lo     = 0.0 0.0
+geometry.prob_hi     = 4 8.97597901
+geometry.is_periodic = 0 1
+
+# ---------------- discretisation -------------------------------------
+ns.EILE_flag        = 1
+ns.continuous_mof   = 1
+ns.MOFITERMAX       = 30
+ns.vof_height_function = 1
+ns.FD_curv_interp   = 1
+
+amr.n_cell    = 64 144
+# max_level=0 keeps a single uniform level.  This is not a performance
+# choice: the twin runs must share an identical grid at every step for the
+# snapshot subtraction to be meaningful, and a level-0-only run guarantees
+# that without depending on the regrid history matching.
+amr.max_level = 0
+amr.regrid_int          = 100000
+amr.n_error_buf         = 2 2 2 2 2
+amr.grid_eff            = 0.85
+amr.blocking_factor     = 2 2 2 2 2
+amr.space_blocking_factor = 1 1 1 1
+amr.time_blocking_factor  = 1
+ns.enable_spectral      = 0
+amr.max_grid_size       = 32 32
+cg.min_max_grid_size    = 16
+ns.ngrow_distance       = 6
+
+# ---------------- output ---------------------------------------------
+# visual_nddata_format=1 makes the solver emit standard AMReX plt* files
+# via WriteMultiLevelPlotfile, which is what the Python post-processing
+# reads.  With format=0 you get Tecplot node data instead and the
+# pipeline will not find any plotfiles.
+ns.visual_nddata_format = 1
+amr.plot_int   = 26
+amr.plot_file  = plt
+amr.check_int  = 1300
+amr.check_file = chk
+amr.grid_log   = grdlog
+amr.plotfile_on_restart = 1
+# 0 = ordinary plot data (we are NOT using the built-in power-iteration LSA)
+amr.LSA_plot_index = 0
+
+# ---------------- linear solvers -------------------------------------
+ns.project_solver_type = 0
+mg.verbose = 0
+cg.verbose = 0
+mg.nu_f    = 40
+mg.nu_0    = 1
+cg.maxiter = 200
+mg.bot_atol = 1.0e-12
+mg.rtol_b   = -0.01
+Lp.v = 0
+mac.mac_abs_tol  = 1.0e-10
+mac.visc_abs_tol = 1.0e-10
+ns.minimum_relative_error = 1.0e-18
+ns.initial_project_cycles = 3
+ns.initial_cg_cycles      = 1
+ns.post_init_pressure_solve = 1
+ns.projection_pressure_scale = 1.0
+# Solver tolerances are tighter than the stock capillary deck on purpose.
+# The perturbation we are trying to measure is small; if the projection
+# residual is comparable to eps, the "perturbation" is solver noise.
+# Keep mac_abs_tol several orders below eps.
+
+# ---------------- time stepping --------------------------------------
+# A FIXED dt is mandatory.  The twin subtraction requires both runs to be
+# at identical times, and DMD requires a constant sampling interval; an
+# adaptive dt would break both.
+ns.fixed_dt   = 0.001553083914
+ns.cfl        = 0.5
+ns.init_shrink = 1.0
+ns.change_max  = 1.01
+ns.dt_cutoff   = 1.0e-11
+# Capillary wave stability:  dt < sqrt(rho dx^3 / (2 pi sigma))
+#   dr = 0.0625 -> dt_cap = 0.00621234
+# The value above carries a safety margin below that limit.
+
+# ---------------- physics --------------------------------------------
+ns.num_materials = 2
+ns.num_species_var = 0
+ns.material_type = 0 0
+ns.FSI_flag      = 0 0
+
+ns.gravity   = 0.0
+ns.tension   = 1
+ns.visc_coef = 1.0
+ns.denconst  = 1 0.001225
+ns.viscconst = 0.02 0.00026
+ns.heatviscconst = 0.0 0.0 0.0
+ns.tempconst = 293.0 293.0 293.0
+ns.pressure_error_cutoff = 0.0 0.0 0.0
+ns.elastic_time      = 0.0 0.0 0.0
+ns.elastic_viscosity = 0.0 0.0 0.0
+ns.polymer_factor    = 0.0 0.0 0.0
+
+# ---------------- problem setup --------------------------------------
+ns.probtype = 41
+ns.axis_dir = 4
+ns.xblob = 1.0          # r0, base radius of the liquid column
+ns.yblob = 8.97597901     # perturbation wavelength  (must equal prob_hi[1])
+ns.zblob = 0.0
+ns.radblob = 0.001      # perturbation amplitude eps  <-- the ONLY difference
+                        #     between the perturbed run and its twin
+ns.denfact = 1.0
+ns.velfact = 0.0
+ns.advbot  = 0.0
+ns.adv_vel = 0.0
+ns.adv_dir = 2
+ns.vinletgas = 0.0
+ns.rgasinlet = 1.57
+ns.twall = 0.0
+ns.xblob4 = 0.0
+ns.xblob5 = 0.0
+ns.yblob4 = 0.0
+ns.yblob5 = 0.0
+ns.vorterr = 0.0 0.0 0.0
+ns.sum_interval = 1
+ns.output_drop_distribution = 1
+
+# We are NOT using the solver's built-in power-iteration LSA driver.
+# NS-MFP builds its subspace from ordinary nonlinear runs, so this stays 0.
+amr.LSA_activate = 0
+amr.LSA_nsteps_krylov_subspace_method = 0
+amr.LSA_initial_levelSteps = 0
+
+# ---------------- boundary conditions --------------------------------
+# 0 = Interior/periodic   1 = Inflow   2 = Outflow
+# 3 = Symmetry            4 = SlipWall 5 = NoSlipWall
+# r=0 symmetry axis; r=rmax no-slip wall; z periodic both ends.
+ns.lo_bc = 3 0
+ns.hi_bc = 5 0
+
+fab.precision = DOUBLE
