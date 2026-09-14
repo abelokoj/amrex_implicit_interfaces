@@ -34,6 +34,9 @@ FORMATS = ("png", "pdf", "svg")
 # Colour cycle
 # ----------------------------------------------------------------------
 # : House palette, ordered so that the earliest slots stay distinguishable both in normal vision and under deuteranopia, and so that faint colours appear late. A single-series plot therefore receives #009AFA, which is more decisive than matplotlib's muted default and clears the 3:1 contrast threshold a thin line on white requires. : : The order was chosen by measurement rather than taste: perceptual distance in CIE Lab, computed both normally and through a deuteranopia simulation, with colours below 3:1 contrast against white penalised. Two orderings mattered. Red (#FF0000) and olive (#AC8E18) are almost indistinguishable to a deuteranope at dE 2.2, so they are placed far apart. The three blues, two oranges and two cyans in the original list are likewise separated, since adjacent near-duplicates are what render a legend unreadable. : : Green occupies slot 2, immediately after red. Under simulated deuteranopia this reduces the worst-case separation among the leading entries: measured values are dE 170.5, 77.1, 46.1, 42.6 and 41.3 for two through six series respectively, falling to 22.9 at seven series, which is at the approximate collision threshold of 22. The ordering therefore remains workable through six series, but a figure whose argument depends on distinguishing two particular curves should carry markers or dash patterns rather than relying on hue alone.
+#: Grid lines on every axis. Set to True to restore them; nothing else needs changing, since the line style, colour and width below continue to describe how they are drawn. Ticks are unaffected either way: the major and minor tick marks are set separately and stay as they are.
+SHOW_GRID = False
+
 PALETTE = [
     "#009AFA",          # azure          3.00:1
     "#FF0000",          # red            4.00:1
@@ -79,7 +82,10 @@ def apply_style():
         "figure.dpi": 600, "savefig.dpi": 600, "savefig.bbox": "tight",
 
         # Alpha stays at 1.0 so grid.color is the rendered colour. Compositing a grey at partial opacity against white lightens it, which makes the requested value and the perceived value disagree.
-        "axes.grid": True, "grid.linestyle": "--",
+        # GRID LINES: set SHOW_GRID at the top of this module to True to
+        # restore them. Everything else here describes how they look once
+        # shown, and is left in place so that switching back needs one edit.
+        "axes.grid": SHOW_GRID, "grid.linestyle": "--",
         "grid.color": "0.5", "grid.linewidth": 0.5, "grid.alpha": 1.0,
 
         # Ticks point INTO the axes and appear on all four sides. Note that xtick.direction governs both major and minor ticks; there is no xtick.minor.direction rcParam, and setting one raises a KeyError. Axes3D ignores these entirely, which is correct, since MATLAB draws three-dimensional ticks outward too.

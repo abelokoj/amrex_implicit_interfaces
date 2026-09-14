@@ -240,7 +240,7 @@ def figure_field(field, r, z, times, planes, radii_z, radii, tag, outdir,
 
     # Panel width shrinks a little as panels are added, so that four still fit across a page at the margins used for the report rather than being scaled down as a block.
     per_panel = 2.7 if n_panel <= 3 else 2.3
-    fig, axes = plt.subplots(1, n_panel, figsize=(per_panel * n_panel, 4.6),
+    fig, axes = plt.subplots(1, n_panel, figsize=(per_panel * n_panel, 4.8),
                              sharey=True)
     axes = np.atleast_1d(axes)
 
@@ -250,14 +250,12 @@ def figure_field(field, r, z, times, planes, radii_z, radii, tag, outdir,
         contour = ax.contourf(r, z, planes[index].T, levels=levels,
                               cmap="RdBu_r", extend="both")
         ax.plot(radii[index], radii_z, "-", color="k")
-        ax.set_xlabel("$r$")
-        # The mode amplitude is stated on each panel. In the linear regime the interface displacement is a few per cent of the radius, which on a panel spanning two radii is a line width or two, so a reader who is not told the amplitude sees an apparently straight interface and reasonably wonders whether anything is happening. The number resolves that: the deformation is small because the measurement requires it to be small.
+        # The two labels are split deliberately. The instant goes beneath the panel with the abscissa, where it reads as a caption to the panel it belongs to; carrying it in the axis label places it there automatically, without hand-positioned text that would need moving whenever the figure size or panel count changed. The amplitude stays above, close to the colour bar's scale and to the figure title, where the four values read down the row as a sequence and the growth between panels is apparent at a glance.
+        #
+        # The amplitude is stated at all because in the linear regime the interface displacement is a few per cent of the radius, which on a panel spanning two radii is a line width or two. A reader not told the amplitude sees an apparently straight interface and reasonably wonders whether anything is happening; the number resolves that.
+        ax.set_xlabel(rf"$r$" "\n" rf"$t={times[index]:.2f}$")
         if amplitudes is not None:
-            ax.set_title(rf"$t={times[index]:.2f}$"
-                         "\n" rf"$a/r_0={amplitudes[index]:.4f}$",
-                         fontsize=9)
-        else:
-            ax.set_title(rf"$t={times[index]:.2f}$")
+            ax.set_title(rf"$a/r_0={amplitudes[index]:.4f}$", fontsize=9)
         ax.set_xlim(0.0, r_limit)
         ax.set_ylim(float(z.min()), float(z.max()))
         # The global style draws a dashed grid, which would otherwise be overlaid on the filled contours.

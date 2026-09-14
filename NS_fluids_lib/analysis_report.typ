@@ -239,6 +239,12 @@ Two further points complete the argument. The transient correction is fitted to 
 
 Applied to the calculations at $epsilon = 2 times 10^(-2)$, that check fails: the extrapolation returns rates near $0.344$ against an inviscid bound of $0.34333$. The conclusion is that no rate from those calculations should be quoted, whether directly fitted or corrected, and the remedy is the smaller amplitude identified above rather than any further post-processing. The measurement cases are therefore repeated at $epsilon = 5 times 10^(-3)$ and a stop time of $3.5$ e-folding times, which places the end of the calculation at $t = 10.6$, where the amplitude reaches $0.1 r_0$ and the residual transient is about one per cent. That amplitude remains well above the noise floor, being some five per cent of a cell width at the coarsest resolution and nineteen per cent at the finest.
 
+A final refinement concerns where the window opens. A least-squares fit returns something close to the average growth rate across its window, so a window opening while the transient still contributes several per cent carries that contamination into the answer however well the calculation has settled by the time it ends. The opening time is therefore taken from the fitted decay, as the instant at which the residual transient falls below one per cent, rather than from a fixed fraction of the record. On the reference calculation that moves the opening from $t = 4.8$, where the transient is $6.5$ per cent, to $t = 8.8$, where it is one per cent, and reduces the bias on the fitted rate from about two per cent to below one.
+
+The tolerance of one per cent is a compromise and is stated as such. A stricter requirement pushes the opening towards the end of the record and leaves too few samples, trading a transient bias for a sampling one. At one per cent the residual bias is a few tenths of a per cent, which is below the discretisation error at every resolution used here, so the measurement is limited by the mesh rather than by the window.
+
+The mesh sequence at $epsilon = 5 times 10^(-3)$ gives $0.326457$, $0.325260$ and $0.324950$ at 8, 16 and 32 cells per radius, with coefficients of determination of $0.99997$ or better. The successive changes are $-1.20 times 10^(-3)$ and $-3.10 times 10^(-4)$, a ratio of $3.86$, so the observed order of convergence is $1.95$: second order, as the discretisation is designed to be, and demonstrated rather than assumed.
+
 
 == 7a. A defect in the solver and its resolution
 
